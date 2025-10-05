@@ -1,7 +1,7 @@
 import TerminalOverlay from "@/Components/TerminalOverlay";
 import { Button } from "@/Components/ui/button";
 import UserPrograms from "@/Components/UserPrograms";
-import { ArrowRight, Terminal } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/dist/client/link";
 
 const HomePage = () => {

@@ -1,6 +1,6 @@
 // src/constants/staticInfo.ts
 
-import { AppleIcon, DumbbellIcon, Zap, Droplet, Calculator } from "lucide-react";
+import { AppleIcon, DumbbellIcon, Zap, Droplet } from "lucide-react";
 
 
 // --- Nutrition Information: Expanded Categories ---

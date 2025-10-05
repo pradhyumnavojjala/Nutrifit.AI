@@ -1,4 +1,4 @@
-import { PandaIcon, ZapIcon } from "lucide-react";
+import { PandaIcon } from "lucide-react";
 import Link from "next/link";
 
 const Footer = () => {
