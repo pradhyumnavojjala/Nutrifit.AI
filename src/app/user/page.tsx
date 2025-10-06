@@ -11,13 +11,17 @@ import { Save, User, Rss, Ruler, Weight, Hand, Info, Code, Loader2, Calendar } f
 import ProfileHeader from "@/Components/ProfileHeader";
 import CornerElements from "@/Components/CornerElements";
 
+// 🛑 REMOVED THE CRASHING 'toast' FUNCTION CALL 🛑
+// The local notification logic now uses native browser functions (alert/console.log)
+// to prevent the "Function not implemented" error and allow deployment.
+
+
 const CustomUserProfilePage = () => {
   const { isLoaded, user } = useUser();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState(""); 
   
-  // 🛑 NEW/RE-ADDED: DOB State 🛑
   const [dateOfBirth, setDateOfBirth] = useState(""); 
   
   const [codeName, setCodeName] = useState("");
@@ -39,9 +43,8 @@ const CustomUserProfilePage = () => {
       // Safely read custom fields from unsafeMetadata, defaulting to empty string
       const metadata = user.unsafeMetadata || {};
       
-      // 🛑 Initialize DOB from metadata 🛑
+      // Initialize fields from metadata 
       setDateOfBirth((metadata.dateOfBirth as string) || "");
-
       setCodeName((metadata.codeName as string) || "");
       setAge((metadata.age as string) || "");
       setHeight((metadata.height as string) || "");
@@ -77,10 +80,11 @@ const CustomUserProfilePage = () => {
       // 2. Prepare ALL metadata updates
       const metadataUpdates = {
           unsafeMetadata: {
-            ...user.unsafeMetadata, // Keep any other existing metadata
-            // 🛑 Save DOB to metadata 🛑
-            dateOfBirth: dateOfBirth, 
+            // NOTE: It is better to spread the existing metadata first to ensure no data is lost
+            // when updating a subset of fields. The current code does this correctly:
+            ...user.unsafeMetadata, 
             
+            dateOfBirth: dateOfBirth, 
             codeName: codeName,
             age: age,
             height: height,
@@ -96,14 +100,14 @@ const CustomUserProfilePage = () => {
           user.update(metadataUpdates),
       ]);
 
-      // Success notification
+      // 🛑 SAFE SUCCESS NOTIFICATION 🛑
       console.log("SUCCESS: Profile Updated successfully!");
-      alert("Profile Updated successfully!"); 
-
+      alert("Profile Updated successfully!"); // Temporary browser alert
+      
     } catch (error) {
       console.error("Failed to update user profile:", error);
-      // Failure notification
-      console.log("ERROR: Could not save profile changes.");
+      
+      // 🛑 SAFE FAILURE NOTIFICATION 🛑
       alert("ERROR: Could not save profile changes. Check console for details.");
       
     } finally {
@@ -163,7 +167,7 @@ const CustomUserProfilePage = () => {
           </div>
           {/* END NAME FIELDS GRID */}
 
-          {/* 🛑 DOB Input 🛑 */}
+          {/* DOB Input */}
           <div className="space-y-2">
             <label htmlFor="dateOfBirth" className="font-mono flex items-center gap-2 text-sm font-medium">
               <Calendar className="size-4 text-primary/70" /> Date of Birth
