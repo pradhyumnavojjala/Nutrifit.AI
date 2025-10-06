@@ -1,5 +1,6 @@
 "use client";
 
+
 import { Button } from "@/Components/ui/button";
 import { Card } from "@/Components/ui/card";
 import { vapi } from "@/lib/Vapi";
@@ -7,28 +8,11 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-// Define the expected structure for a Vapi transcript message
-interface VapiTranscriptMessage {
-  type: "transcript";
-  transcriptType: "final" | "partial";
-  transcript: string;
-  role: "user" | "assistant";
-}
-
-// 🛑 ADDED: Interface for messages stored in state 🛑
-interface Message {
-    content: string;
-    role: string;
-}
-
 const GenerateProgramPage = () => {
   const [callActive, setCallActive] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  
-  // 🛑 FIXED: Changed useState type from { content: string, role: string }[] to Message[] 🛑
-  const [messages, setMessages] = useState<Message[]>([]);
-  
+  const [messages, setMessages] = useState<any[]>([]);
   const [callEnded, setCallEnded] = useState(false);
 
   const { user } = useUser();
@@ -104,28 +88,14 @@ const GenerateProgramPage = () => {
       console.log("AI stopped Speaking");
       setIsSpeaking(false);
     };
-    
-    // CORRECTED: Safely handles 'unknown' type 
-    const handleMessage = (message: unknown) => {
-      // Use a type guard to ensure the object has the properties we need
-      if (
-        typeof message === 'object' && 
-        message !== null && 
-        'type' in message && 
-        'transcriptType' in message
-      ) {
-        // Assert the type to satisfy the compiler
-        const typedMessage = message as VapiTranscriptMessage;
-        
-        if (typedMessage.type === "transcript" && typedMessage.transcriptType === "final") {
-          const newMessage: Message = { content: typedMessage.transcript, role: typedMessage.role };
-          setMessages((prev) => [...prev, newMessage]);
-        }
+    const handleMessage = (message: any) => {
+      if (message.type === "transcript" && message.transcriptType === "final") {
+        const newMessage = { content: message.transcript, role: message.role };
+        setMessages((prev) => [...prev, newMessage]);
       }
     };
-    
-    // CORRECTED: Safely handles 'unknown' type 
-    const handleError = (error: unknown) => {
+
+    const handleError = (error: any) => {
       console.log("Vapi Error", error);
       setConnecting(false);
       setCallActive(false);
@@ -151,35 +121,26 @@ const GenerateProgramPage = () => {
     };
   }, []);
 
-  // REVERTED: Using the secure server API route 
   const toggleCall = async () => {
     if (callActive) vapi.stop();
     else {
       try {
-        if (!user?.id) {
-            console.error("User not authenticated or ID missing. Cannot start call.");
-            return;
-        }
-
         setConnecting(true);
         setMessages([]);
         setCallEnded(false);
 
-        // Call the secure server API route to start the Vapi session
-        const response = await fetch('/api/vapi-start', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id }), 
+        const fullName = user?.firstName
+          ? `${user.firstName} ${user.lastName || ""}`.trim()
+          : "There";
+
+        await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
+          variableValues: {
+            full_name: fullName,
+            user_id: user?.id,
+          },
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to start Vapi session via API.');
-        }
-        // If successful, the 'call-start' listener will handle the state update
-
       } catch (error) {
-        console.error("Failed to start call", error);
+        console.log("Failed to start call", error);
         setConnecting(false);
       }
     }
@@ -204,29 +165,6 @@ const GenerateProgramPage = () => {
           {/* AI ASSISTANT CARD */}
           <Card className="bg-card/90 backdrop-blur-sm border border-border overflow-hidden relative">
             <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
-              {/* AI VOICE ANIMATION */}
-              <div
-                className={`absolute inset-0 ${
-                  isSpeaking ? "opacity-30" : "opacity-0"
-                } transition-opacity duration-300`}
-              >
-                {/* Voice wave animation when speaking */}
-                <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 flex justify-center items-center h-20">
-                  {[...Array(5)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`mx-1 h-16 w-1 bg-primary rounded-full ${
-                        isSpeaking ? "animate-sound-wave" : ""
-                      }`}
-                      style={{
-                        animationDelay: `${i * 0.1}s`,
-                        height: isSpeaking ? `${Math.random() * 50 + 20}%` : "5%",
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
               {/* AI IMAGE */}
               <div className="relative size-32 mb-4">
                 <div
